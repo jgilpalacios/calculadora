@@ -1,0 +1,573 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Bootstrap Example</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="bootstrap.css" rel="stylesheet">
+<style type="text/css">
+
+ 
+
+
+#contenido{
+  margin: 1%;
+  padding: 1%;
+  background-color: bisque;
+  //float: left;
+  width: 97%;
+  height:97vh;
+  border-radius: 20px 20px 50px 0px;
+	box-shadow: 10px 10px 5px 2px rgba(0, 100, 100, 0.5);
+}
+
+#memo{
+  background-color: yellow;
+  width: 95%;
+}
+#historia{
+  background-color: lightgray;
+  width: 95%;
+}
+
+#num{
+  background-color: white;
+  width: 95%;
+}
+
+
+button{
+  width: 50%;
+  height: 5vh;
+  text-align: center;
+  align-content: center;
+  background-color: white;
+  color: black;
+  border: none; 
+  border-radius: 10px 10px 10px 10px;
+	box-shadow: 2px 2px 2px 2px rgba(0, 100, 100, 0.5);
+}
+button:hover {
+	box-shadow: 2px 2px 2px 2px rgba(0, 50, 50, 0.5);
+}
+/*responde al hacer click con los botones*/
+button:active {
+	box-shadow: 1px 1px 1px 1px rgba(0, 50, 50, 0.5);
+}
+
+.btnum{
+  background-color: blue;
+  color: white;
+  border: none;
+}
+.botinv{
+  background-color: green;
+  color: white;
+}
+.botc{ 
+  background-color: red;
+  color: white;
+}
+.botcbin{ 
+  background-color: purple;
+  color: white;
+}
+.bot{
+  background-color: yellow;
+  color: purple;
+}
+
+.par{
+  background-color: lightgreen;
+  color: purple;
+}
+
+#pi, #DEG{
+  background-color: pink;
+  color: black;
+}
+
+.botonera{
+  float: left;
+  width: 25%;
+  height:6vh;
+  text-align: center;
+}
+
+.rompe{
+  clear: both;  
+}
+
+  *{
+    -webkit-touch-callout: none; /* anula el efecto visual del touch prolongado sobre el objeto */
+
+    user-select: none; /* user-select, hace el objeto no seleccionable */
+
+    -webkit-tap-highlight-color: rgba(0,0,0,0); /* anula el feedback de color al hacer tap en un link */
+    -webkit-tap-highlight-color: transparent; /* similar anterior en algunos android */
+  }
+
+</style>
+<script src="jquery-1.11.2.min.js"></script>
+<script src="jquery-ui.min.js"></script>
+<script src="bootstrap.js"></script>
+<script src="interact.min.js"></script>
+<script src="cordova.js"></script>
+
+<script type="text/javascript">
+  var num, acc = 0, op = "", memo; 
+  var nparentesis = 0;
+  var ang = 1 , deg = 0;
+  var contParentesis=[];
+  var inv=0;
+  var opInv=[['SIN','ASN'],['COS','ACS',],['TAN','ATN'], ['LOG','10^'], ['LN','e^'],['&deg;,&rsquo;,&rdquo;','&deg;']];
+  var puestoPunto=false;
+  var puestaComa=false;
+  var poniendoExp=false;
+  var poniendoGMS=0;
+  var historial=[0,0,0,0,0,0,0,0,0,0];
+  var histActivo=0;
+  var memorias=[0,0,0,0,0,0,0,0,0,0];
+  var memActiva=0;
+  var operando=false;
+  //carga el resultado en el historial
+  function ajustaHistorial(){
+  	for( var i=9;i>0;i--){
+  		historial[i]=historial[i-1];
+  	}
+  	$('#H0').html('H0');
+  	histActivo=0;
+  	historial[0]= num.html();
+  	//$("#historia").html(historial[0]);
+  }
+  //muestra la posicion del historial a usar y carga la pantalla con el valor activo
+  function muevePosHistorial(){ 
+  	$("#num").html( historial[histActivo]);
+  	if (++histActivo > 9)  histActivo=0;
+  	$('#H0').html('H'+ histActivo);  	
+  }
+   //muestra la posicion del historial a usar
+  function muevePosMemoria(){ 
+  	if (++memActiva> 9)  memActiva=0;
+  	$('#M0').html('M'+ memActiva);
+  	$("#memo").html( memorias[memActiva]);
+  }
+  //limpia el contenido de la caja de texto
+  function vaciar () {
+  	num.html("0"); 
+  	puestoPunto=false; 
+  	poniendoExp=false; 
+  	poniendoGMS=0; 
+  	if(inv == 1)$('#c5').html('°');//si estamos poniendo grados minutos y segundos y pasamos a otra cosa
+  	} 
+  //Carga acumulador en operaciones binarias, o bien prepara el array para gestionar paréntesis
+  function operar() {
+  	gmsDec();
+  	puestoPunto=false;//se deja poner decimales
+  	var operacion=$(this).html();
+  	if(nparentesis === 0){
+  		if(op!='') calcular();
+  		acc = num.html();  		
+  		op = operacion;
+  	}else{
+  		contParentesis[nparentesis-1]+=num.html() + operacion;
+  	}
+  	operando=true;
+  	//vaciar ();
+  }
+  //calcula el resultado para operaciones binarios o termina de gestionar el array de los parentesis si se pulsa el igual
+  function calcular() {
+    while (nparentesis>0){//cerramos los todos los parentesis abiertos
+    	cierraParentesis();
+    }
+    gmsDec();
+    if (op === "+") {num.html(+acc + +num.html())}
+    else if (op === "-") {num.html(+acc - +num.html())}
+    else if (op === "*") {num.html (+acc * +num.html())}
+    else if (op === "/") {num.html ((+acc / +num.html())||"ERROR")}
+    else if (op === "^") {num.html (Math.pow(+acc,+num.html())||"ERROR")}
+    else if (op === "MOD") {num.html (+acc%num.html())}
+    else if (op === "MCD") {mcd()}
+    else if (op === "MCM") {mcm()}
+    //pasamos el resultado a historia
+    ajustaHistorial();
+    op="";//dejamos sin operaciones pendientes
+    operando=true;
+  }
+  //permite introducir numeros desde los botones
+  function cifra(){
+  	var c=$(this).html();
+  	if(operando){
+  		if(poniendoGMS==0){
+  			if(!puestaComa) num.html(c);
+  			else num.html(num.html()+c);
+  		}else num.html('0');//si se pulsó una operación se debe partir de 0
+  		operando=false;//ahora estamos metiendo cifras
+  	}else{
+  		if(puestoPunto || puestaComa || poniendoGMS>0){
+  			num.html(num.html() + c);
+  		}else{
+  		
+  			if(num.html() === '-'){//si hay un signo menos
+  			num.html(num.html()+c)
+  			}else{
+				var aux=num.html() * 10 || 0;//para cuando hay valores no numericos en la pantalla y se mete un número.
+ 				if(aux<0){num.html(aux - +c);}//trabajamos con negativos
+ 				else {num.html(aux + +c);}
+ 			}
+ 		}
+ 	}
+  }
+  //monarios con inverso
+  function monario() {
+  	var noAngulo=true;//para ajustar la introducción de °, ' y ".
+  	var operador=$(this).html();
+  	if (operador === "SIN") {gmsDec();num.html(Math.sin(+num.html()*ang));}
+  	else if (operador === "COS") {gmsDec();num.html(Math.cos(+num.html()*ang));}
+  	else if (operador === "TAN") {gmsDec();num.html(Math.tan(+num.html()*ang));}
+  	else if (operador === "LOG") {gmsDec();num.html((Math.log(+num.html())/Math.log(10))||"ERROR");}
+  	else if (operador === "LN") {gmsDec();num.html(Math.log(+num.html())||"ERROR");}
+  	else if (operador === "ASN") {gmsDec();num.html((Math.asin(+num.html())/ang)||"ERROR");}
+  	else if (operador === "ACS") {gmsDec();num.html((Math.acos(+num.html())/ang)||"ERROR");}
+  	else if (operador === "ATN") {gmsDec();num.html(Math.atan(+num.html())/ang);}
+  	else if (operador === "10^") {gmsDec();num.html( Math.pow(10,+num.html()));}
+  	else if (operador === "e^") {gmsDec();num.html( Math.pow(Math.E,+num.html()));}
+  	else if (operador === "°,’,”") {gms();}
+  	else if ((operador === "°") || (operador === "’") || (operador === "”")) {ponGMS();
+  		if((operador === "°") || (operador === "’")){ 
+  			noAngulo=false;
+  			operando=false;
+  		}
+  	}
+  	if (noAngulo){
+  		ajustaHistorial();
+  		operando=true;
+  	}
+  }
+  //cambia la funcion de ciertos botones por su inversa
+  function inverso(){
+  	inv++;
+  	inv%=2;
+  	if(inv == 0){
+  		for(var i=0;i<opInv.length;i++){
+  			$("#c"+i).html(opInv[i][0]);
+  		}
+  	
+  	}else{
+  		for(var i=0;i<opInv.length;i++){
+  			$("#c"+i).html(opInv[i][1]);
+  		}
+  	}
+  }
+  //prepara el estado para realizar los calculos en grados, radianes o grados centesimales
+  function angulos(){
+  	++deg;
+  	deg %= 3;
+  	var elaux=$("#deg");
+  	switch(deg){
+  		case 0:elaux.html("RAD");ang=1;//radianes
+  		break;
+  		case 1:elaux.html("DEG");ang=Math.PI/180;//grados
+  		break;
+  		case 2:elaux.html("GRA");ang=Math.PI/200;//grados centesimales
+  		break;
+  	}
+  }
+  
+  //se activa al abrir parentesis almacenándo los calculos en forma de texto en un array
+  function abreParentesis(){
+  	contParentesis[nparentesis++]="";
+  	$("#parent").html("(");
+  }
+  //se activa al cerral el parentesis, evalua el texto del array y lo pone en la pantalla disminuye en uno en nivel de parentesis
+  function cierraParentesis(){
+  	contParentesis[--nparentesis]+=num.html();
+  	num.html(eval(contParentesis[nparentesis]));
+  	if(nparentesis === 0) $("#parent").html("");
+  }
+  //para poder introducir notacion cientifica desde el teclado
+  function notCient(){
+  	/*if(poniendoExp)num.html('ERROR');
+  	else{*/
+  		num.html(num.html()+"e");
+  		puestoPunto=true;
+  		poniendoExp=true;
+  		operando=false;
+  	//}
+  }
+  // calcula el factorial
+  function factorial(){
+  	gmsDec();
+  	var n=+num.html();
+  	var res=1;
+  	for (var i=n;i>0;i--) res*=i;
+  	num.html(res);
+  }
+  // calcula el sumatorio de la lista
+  function sumatorio(){
+  	var vector=num.html().split(',');
+  	var res=0;
+  	for (var i=0;i<vector.length;i++) {
+  		res+=+gmsComvertidor(vector[i]);
+  	}
+  	poniendoGMS=0;
+	if(inv == 1)$('#c5').html('°');
+	puestaComa=false;
+  	num.html(res);
+  }
+    // calcula el producto del la lista
+  function producto(){
+  	var vector=num.html().split(',');
+  	var res=1;
+  	for (var i=0;i<vector.length;i++){
+  		gmsDec();
+  		res*=+gmsComvertidor(vector[i]);
+  	}
+  	poniendoGMS=0;
+	if(inv == 1)$('#c5').html('°');
+	puestaComa=false;
+  	num.html(res);
+  }
+  //pone la calculadora en su estado inicial
+  function reset(){
+  	vaciar ();
+  	acc=0;op=""
+  	nparentesis = 0;
+  	ang = 1 ; deg = 0; $("#deg").html('RAD');
+  	contParentesis=[];$("#parent").html('');
+  	inv=1;inverso();
+  	puestoPunto=false;
+  	puestaComa=false;
+  	poniendoExp=false;
+  }
+  //hace el máximo común divisor de 2 numeros
+  function mcd(){
+	var n1=+acc;
+	var n2=+num.html();
+	var res;
+	var resto;
+	do{
+		res=n2;
+		resto=n1%n2;
+		n1=res;n2=resto;
+	}while(resto>0);
+	num.html(res);	
+  }
+  //hace el minimo común multiplo de 2 numeros
+  function mcm(){
+  	var n=+num.html()*+acc
+  	mcd();
+  	num.html(n/+num.html());
+  }
+  //Descompone en factores
+  function factoriza(){
+  	gmsDec();
+	var n=+num.html();
+	var res="";
+	var i=2;
+	var lim=Math.sqrt(n);
+	if(n>9999999999999|| Math.floor(n)<n || n<0){
+		res="GRANDE O NO NATURAL";
+	}else if (n>2){//con 2 se saca '2, 1' lo que no está mal pero es antiestético
+	  do{
+		if(n%i === 0){
+			res+=i+","
+			n=n/i;
+			lim=Math.sqrt(n);
+		}else{
+			i++;
+		}
+	  
+	  }while(i<=lim);
+	  res+=n;
+	}else res=n;
+
+	num.html(res||0);
+  }
+  //pasa a grados minutos y segundos y vuelve a convertirlo a notacion decimal
+  function gmsComvertidor(val){
+  	var n=val;
+	var res=val;
+	if(n.indexOf("°")>0){
+		var aux=n.split("°");
+		res=+aux[0];
+		if(aux[1].indexOf("’")>0){
+			aux=aux[1].split("’");
+			res+=aux[0]/60;
+			if(aux[1].indexOf("”")>0){
+				aux=aux[1].split('”');
+				res+=aux[0]/3600;
+			}
+		}	
+	}
+	return res;
+  }
+  function gmsDec(){
+  	var n=num.html();
+	var res=gmsComvertidor(n);
+	poniendoGMS=0;
+	if(inv == 1)$('#c5').html('°');
+	num.html(res);
+  }
+  function gms(){
+	var n=num.html();
+	var res;
+	if(n.indexOf("°")>0){
+		gmsDec();	
+	}else{
+		var grad=Math.floor(+n);
+		var minut=Math.floor((+n-grad)*60);
+		var sec=((+n-grad)*60-minut)*60;
+		res=grad+"°"+minut+"’ "+sec+'”';
+	}
+	poniendoGMS=0;
+	num.html(res);
+  }
+  function ponGMS(){
+  	switch (poniendoGMS){
+  		case 0: 
+  			if(!puestaComa)gmsDec();
+  			num.html(num.html()+'°');
+  			poniendoGMS++;
+  			$('#c5').html('’');
+  			puestoPunto=false;
+  		break;
+  		case 1: num.html(num.html()+"’ ");
+  			poniendoGMS++;
+  			$('#c5').html('”');
+  			puestoPunto=false;
+  		break;
+  		case 2: num.html(num.html()+'”');
+  			poniendoGMS=0;
+  			$('#c5').html('°');
+  		break;
+  	}
+  }
+$(
+	function() {
+		//carga num con el objeto caja de texto
+		num = $("#num");
+		memo = $("#memo");
+		
+		$("#memo").draggable({revert: "invalid",  helper:"clone", containment: 'parent'	});
+		$("#num").droppable({  drop: function( evento, ui ) { $(this).html(memo.html());}});
+		
+		$("#num").draggable({revert: "invalid",  helper:"clone", containment: 'parent'	});
+		$("#memo").droppable({  drop: function( evento, ui ) { $(this).html(num.html());}});
+		
+		$("#H0").on("click",muevePosHistorial);
+		$("#M0").on("click",muevePosMemoria);
+		
+		num.on("dblclick", function (){vaciar ()});
+		
+		//realiza las operaciones para operadores monarios
+		$("#x²").on("click", function (){gmsDec();num.html(num.html() * num.html());});
+		$("#raiz").on("click", function (){gmsDec();num.html(Math.sqrt(num.html())||"ERROR");});
+		$("#ix").on("click", function (){gmsDec();num.html( 1 / num.html());});
+		$("#INT").on("click", function (){gmsDec();(+num.html() >0 )? num.html(Math.floor(+num.html())): num.html(Math.ceil(+num.html()));});
+		$("#sig").on("click", function (){gmsDec();if (poniendoExp||puestaComa){num.html(num.html()+'-'); poniendoExp=false;} else num.html(-1* num.html()||'-');});
+		$("#pt2").on("click", function (){gmsDec();num.html(Math.pow(2,+num.html()));});
+		$("#fac").on("click", factorial);
+		$("#sumat").on("click", sumatorio);
+		$("#producto").on("click", producto);
+		$("#FACT").on("click",factoriza);
+		//$("#GMS").on("click",gms)
+		
+		// monarios con dos operaciones una inversa de la otra
+		$(".botinv").on("click", monario);
+		
+		//realiza las operaciones para operadores binarios
+		$(".botcbin").on("click", operar);
+		
+		//calcula al pulsar eq
+		$("#eq").on("click", function (){calcular();});
+		
+		//introduce cifras
+		$(".btnum").on("click", cifra);
+		
+		//poner decimales con el botón
+  		$("#punto").on("click",function () {if( !puestoPunto ){num.html(num.html()+ "."); puestoPunto=true;}});
+  		
+  		//poner comas para las listas
+  		$("#coma").on("click",function () {
+  			poniendoGMS=0;
+			if(inv == 1)$('#c5').html('°');
+  			num.html(num.html()+ ", ");
+  			puestoPunto=false; 
+  			puestaComa=true;
+  		});
+		
+		//boton inverso
+		$("#INV").on("click", inverso);
+		
+		//boton DEG
+		$("#DEG").on("click", angulos);
+		
+		//boton C
+		$("#C").on("click", vaciar);
+		
+		//boton AC
+		$("#AC").on("click", reset);
+		
+		//botones ( y )
+		$("#apar").on("click", abreParentesis);
+		$("#cpar").on("click", cierraParentesis);
+		
+		//boton pi π
+		$("#pi").on("click", function (){num.html(Math.PI); puestoPunto=true;});
+		
+		//boton EE
+		$("#e").on("click", notCient); 
+		
+		//boton ToM y FrM (from M)
+		$("#ToM").on("click", function (){memo.html(num.html()); memorias[memActiva]=num.html();}); 
+		$("#FrM").on("click", function (){num.html(memo.html());}); 
+		
+		//tecla DEL borra el último caracter introducido
+		$("#DEL").on("click", function (){var cad=num.html(), n=cad.length-1; num.html(cad.substring(0, n));}); 
+
+  	}
+);
+
+</script>  
+</head>
+<body>
+<!--<div class="container">-->
+<div id="contenido"><br/>
+  <div id="num" contentEditable="true">0</div>
+  <!--<div class="botonera" id="parent"></div> <div class="botonera"id="deg">RAD</div>  <div class="botonera"><button id="H0" class="bot">H0</button></div><div class="botonera"><button id="eq" class="bot">=</button></div>
+  <div class="rompe"><br></div>-->
+  <div>	
+  <div class="botonera" id="parent"></div> <div class="botonera"id="deg">RAD</div>  <div class="botonera"><button id="H0" class="bot">H0</button></div><div class="botonera"><button id="eq" class="bot">=</button></div>
+
+	<div class="botonera"><button id="INV" class="botinv" title="Permite acceder a las operaciones inversas de los botones de su misma clase">INV</button></div><div class="botonera"><button id="DEG" class="bot" title="Permite cambiar las unidades en que se miden los ángulos para los cálculos (redianes, grados o grados centesimales)">DEG</button></div><div class="botonera"><button id="C" class="botc" title="Borra la pantalla.">C</button></div><div class="botonera"><button id="AC" class="botc" title="Resetea la calculadora.">AC</button></div>
+	
+	<div class="botonera"><button id="c0" class="botinv">SIN</button></div><div class="botonera"><button id="c1" class="botinv">COS</button></div><div class="botonera"><button id="c2" class="botinv">TAN</button></div><div class="botonera"><button id="pot" class="botcbin">^</button></div>
+	
+	<div class="botonera"><button id="c5" title="Pasa a grados minutos y segundos y viceversa, con INV permite poner los simbolos °,’,”." class="botinv">&deg;,&rsquo;,&rdquo;</button></div><div class="botonera"><button  id="c3" class="botinv">LOG</button></div><div class="botonera"><button id="c4" class="botinv">LN</button></div><div class="botonera"><button id="MCD" class="botcbin" title="Calcula el máximo comun divisor de dos números. Funciona como +,-,*,/,^ (operadores binarios).">MCD</button></div>
+	
+	<div class="botonera"><button id="INT" title="Calcula la parte entera de un número.">INT</button></div><div class="botonera"><button id="FACT" title="Descompone el número en la lista de sus factores primos.">FACT</button></div><div class="botonera"><button id="pt2">2^x</button></div><div class="botonera"><button id="MCM" class="botcbin" title="Calcula el mínimo comun múltiplo de dos números. Funciona como +,-,*,/,^ (operadores binarios).">MCM</button></div>
+  	
+	<div class="botonera"><button id="sig">±</button></div><div class="botonera"><button id="fac" >n!</button></div><div class="botonera"><button id="sumat" title="Calcula la suma de una lista de números separados por comas.">Σx</button></div><div class="botonera"><button id="producto" title="Calcula el producto de una lista de numeros separdos por comas.">Πx</button></div>
+	
+	<div class="botonera"><button id="ix">1/x</button></div><div class="botonera"><button id="x²">x²</button></div><div class="botonera"><button id="raiz">√</button></div><div class="botonera"><button id="coma" title="Separador de los elementos de una lista.">,</button></div>
+	
+	<div class="botonera"><button  id="ToM" class="bot">ToM</button></div><div class="botonera"><button id="FrM" class="bot">FrM</button></div><div class="botonera"><button id="M0" class="bot">M0</button></div><div class="botonera"><button id="DEL" class="botc" title="permite borrar el último carácter de la pantalla">DEL</button></div>
+	
+	<div class="botonera"><button id="n1" class="btnum">1</button></div><div class="botonera"><button id="n2" class="btnum">2</button></div><div class="botonera"><button id="n3" class="btnum">3</button></div><div class="botonera"><button id="mas" class="botcbin">+</button></div>
+	
+	<div class="botonera"> <button id="n4" class="btnum">4</button></div><div class="botonera"><button id="n5" class="btnum">5</button></div><div class="botonera"><button id="n6" class="btnum">6</button></div><div class="botonera"><button id="menos" class="botcbin">-</button></div>
+	
+	<div class="botonera"><button id="n7" class="btnum">7</button></div><div class="botonera"><button id="n8" class="btnum">8</button></div><div class="botonera"><button id="n9" class="btnum">9</button></div><div class="botonera"><button id="por" class="botcbin">*</button></div>
+	
+	<div class="botonera"><button class="par" id="apar">(</button></div><div class="botonera"><button id="n0" class="btnum">0</button></div><div class="botonera"><button class="par" id="cpar">)</button></div><div class="botonera"><button id="dividir" class="botcbin">/</button></div>
+	
+	<div class="botonera"><button id="punto">.</button></div><div class="botonera"><button id="pi">π</button></div><div class="botonera"><button id="e" title="Permite introducir la 'e' para notación ciéntifica.">EE</button></div><div class="botonera"><button id="mod" class="botcbin" title="Calcula el resto de la division. Funciona como +,-,*,/,^ operadores binarios">MOD</button></div>
+  </div>
+  Memoria:
+  <div id="memo" contentEditable="true" class="draggable">0</div>
+  <br/>
+</div>
+<!--</div>-->
+</body>
+</html>
